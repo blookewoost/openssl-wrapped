@@ -1,21 +1,9 @@
 use std::{fs, io::{self, Write}, process::{Command, Stdio}};
 
+const PASSWD: &str = "A_Totally_Random_Password";
+
 fn main() {
-    let password = "ARandomPassPhraseOhYeah";
-    let bits = 2048;
-    let key_open = "keys/open.priv.pem";
-    let key_locked = "keys/locked.priv.pem";
-    let key_temp = "keys/temp.priv.pem";
-
-    // Generate an unencrypted RSA private key.
-    generate_unencrypted_key(key_open, bits).unwrap();
-    lock_existing_key(key_open, key_locked, password).unwrap();
-    unlock_encrypted_key(key_locked, key_temp, password).unwrap();
-
-    let original = fs::read_to_string(key_open).unwrap();
-    let after = fs::read_to_string(key_temp).unwrap();
-
-    assert_eq!(original, after)
+    
 }
 
 fn generate_unencrypted_key(outfile: &str, bits: u32) -> Result<bool, io::Error> {
@@ -91,4 +79,28 @@ fn unlock_encrypted_key(infile: &str, outfile: &str, password: &str) -> Result<b
     let status = child.wait()?;
 
     Ok(status.success())
+}
+
+#[test]
+fn test_lock_and_unlock_2048() {
+    generate_unencrypted_key("keys/open.pem", 2048).unwrap();
+    lock_existing_key("keys/open.pem", "keys/locked.pem", PASSWD).unwrap();
+    unlock_encrypted_key("keys/locked.pem", "keys/temp.pem", PASSWD).unwrap();
+
+    let original = fs::read_to_string("keys/open.pem").unwrap();
+    let after = fs::read_to_string("keys/temp.pem").unwrap();
+
+    assert_eq!(original, after)
+}
+
+#[test]
+fn test_lock_and_unlock_1024() {
+    generate_unencrypted_key("keys/open.pem", 1024).unwrap();
+    lock_existing_key("keys/open.pem", "keys/locked.pem", PASSWD).unwrap();
+    unlock_encrypted_key("keys/locked.pem", "keys/temp.pem", PASSWD).unwrap();
+
+    let original = fs::read_to_string("keys/open.pem").unwrap();
+    let after = fs::read_to_string("keys/temp.pem").unwrap();
+
+    assert_eq!(original, after)
 }
